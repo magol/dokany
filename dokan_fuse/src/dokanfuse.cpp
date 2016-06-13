@@ -124,12 +124,11 @@ CONST_VAL(FILE_SHARE_WRITE)
 CONST_END(cShareMode)
 
 CONST_START(cDisposition)
-CONST_VAL(FILE_SUPERSEDE)
-CONST_VAL(FILE_CREATE)
-CONST_VAL(FILE_OPEN)
-CONST_VAL(FILE_OPEN_IF)
-CONST_VAL(FILE_OVERWRITE)
-CONST_VAL(FILE_OVERWRITE_IF)
+CONST_VAL(CREATE_ALWAYS)
+CONST_VAL(CREATE_NEW)
+CONST_VAL(OPEN_ALWAYS)
+CONST_VAL(OPEN_EXISTING)
+CONST_VAL(TRUNCATE_EXISTING)
 CONST_END(cDisposition)
 
 void DebugConstant(const char *name, DWORD value, Constant *c) {
@@ -185,8 +184,8 @@ FuseCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext,
     DebugConstantBit("\tDesiredAccess", DesiredAccess, cAccessMode);
     DebugConstantBit("\tShareAccess", ShareAccess, cShareMode);
     DebugConstant("\tDisposition", CreateDisposition, cDisposition);
-    FWPRINTF(stderr, L"\tAttributes: %u (0x%x)\n", FileAttributes,
-             FileAttributes);
+    FWPRINTF(stderr, L"\tAttributesAndFlags: %lu (0x%lx)\n",
+             fileAttributesAndFlags, fileAttributesAndFlags);
     FWPRINTF(stderr, L"\tOptions: %u (0x%x)\n", CreateOptions, CreateOptions);
     fflush(stderr);
   }
