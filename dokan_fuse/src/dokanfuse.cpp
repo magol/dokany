@@ -173,6 +173,12 @@ FuseCreateFile(LPCWSTR FileName, PDOKAN_IO_SECURITY_CONTEXT SecurityContext,
                ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions,
                PDOKAN_FILE_INFO DokanFileInfo) {
   impl_fuse_context *impl = the_impl;
+  DWORD creationDisposition;
+  DWORD fileAttributesAndFlags;
+
+
+  impl->convert_window_create_kernel_flag(FileAttributes, CreateOptions, CreateDisposition,
+	  &fileAttributesAndFlags, &creationDisposition);
 
   if (impl->debug()) {
     FWPRINTF(stderr, L"CreateFile : %ls\n", FileName);
@@ -577,15 +583,22 @@ int do_fuse_loop(struct fuse *fs, bool mt) {
   if (fileumask == 0)
     fileumask = umask;
 
-  impl_fuse_context impl(&fs->ops, fs->user_data, fs->conf.debug != 0,
-                         fileumask, dirumask, fs->conf.fsname,
-                         fs->conf.volname);
-
   // Parse Dokan options
   PDOKAN_OPTIONS dokanOptions = (PDOKAN_OPTIONS)malloc(sizeof(DOKAN_OPTIONS));
   if (dokanOptions == NULL) {
-    return -1;
+	  return -1;
   }
+
+  // Load Dokan DLL
+  if (!fs->ch->init()) {
+	  free(dokanOptions);
+	  return -1; // Couldn't load DLL. TODO: UGLY!!
+  }
+
+  impl_fuse_context impl(fs->ch, &fs->ops, fs->user_data, fs->conf.debug != 0,
+                         fileumask, dirumask, fs->conf.fsname,
+                         fs->conf.volname);
+
   ZeroMemory(dokanOptions, sizeof(DOKAN_OPTIONS));
   dokanOptions->Options |=
       fs->conf.networkDrive ? DOKAN_OPTION_NETWORK : DOKAN_OPTION_REMOVABLE;
@@ -602,12 +615,6 @@ int do_fuse_loop(struct fuse *fs, bool mt) {
   // Debug
   if (fs->conf.debug)
     dokanOptions->Options |= DOKAN_OPTION_DEBUG | DOKAN_OPTION_STDERR;
-
-  // Load Dokan DLL
-  if (!fs->ch->init()) {
-    free(dokanOptions);
-    return -1; // Couldn't load DLL. TODO: UGLY!!
-  }
 
   // For SACL_SECURITY_INFORMATION
   int err = AddSeSecurityNamePrivilege();
@@ -642,9 +649,12 @@ bool fuse_chan::init() {
       (DokanUnmountType)GetProcAddress(dokanDll, "DokanUnmount");
   ResolvedDokanRemoveMountPoint = (DokanRemoveMountPointType)GetProcAddress(
       dokanDll, "DokanRemoveMountPoint");
+  ResolvedDokanMapKernelToUserCreateFileFlags =
+	  (DokanMapKernelToUserCreateFileFlagsType)GetProcAddress(
+	  dokanDll, "DokanMapKernelToUserCreateFileFlags");
 
   if (!ResolvedDokanMain || !ResolvedDokanUnmount ||
-      !ResolvedDokanRemoveMountPoint)
+      !ResolvedDokanRemoveMountPoint || !ResolvedDokanMapKernelToUserCreateFileFlags)
     return false;
   return true;
 }

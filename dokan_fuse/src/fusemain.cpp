@@ -14,6 +14,7 @@
 #include <map>
 
 #include "fusemain.h"
+#include "dokanfuse.h"
 #include "utils.h"
 
 #ifndef S_ISLNK
@@ -69,12 +70,12 @@ struct fuse_context *fuse_get_context(void) {
 ///////////////////////////////////////////////////////////////////////////////////////
 ////// FUSE bridge
 ///////////////////////////////////////////////////////////////////////////////////////
-impl_fuse_context::impl_fuse_context(const struct fuse_operations *ops,
+impl_fuse_context::impl_fuse_context(std::shared_ptr<fuse_chan> ch, const struct fuse_operations *ops,
                                      void *user_data, bool debug,
                                      unsigned int filemask,
                                      unsigned int dirmask, const char *fsname,
                                      const char *volname)
-    : ops_(*ops), debug_(debug), filemask_(filemask), dirmask_(dirmask),
+    : ch_(ch), ops_(*ops), debug_(debug), filemask_(filemask), dirmask_(dirmask),
       fsname_(fsname), volname_(volname),
       user_data_(user_data) // Use current user data
 {
@@ -101,6 +102,14 @@ int impl_fuse_context::cast_from_longlong(LONGLONG src, FUSE_OFF_T *res) {
 #endif
   *res = (FUSE_OFF_T)src;
   return 0;
+}
+
+void impl_fuse_context::convert_window_create_kernel_flag(
+	ULONG FileAttributes, ULONG CreateOptions, ULONG CreateDisposition,
+	DWORD *outFileAttributesAndFlags, DWORD *outCreationDisposition)
+{
+	ch_->ResolvedDokanMapKernelToUserCreateFileFlags(FileAttributes, CreateOptions,
+		CreateDisposition, outFileAttributesAndFlags, outCreationDisposition);
 }
 
 int impl_fuse_context::do_open_dir(LPCWSTR FileName,

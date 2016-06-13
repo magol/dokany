@@ -68,6 +68,8 @@ class impl_fuse_context
 {
 	friend class impl_chain_guard;
 
+	std::shared_ptr<fuse_chan> ch_;
+
 	struct fuse_operations ops_;
 	fuse_conn_info conn_info_;
 	void *user_data_;
@@ -79,13 +81,17 @@ class impl_fuse_context
 
 	impl_file_locks file_locks;
 public:
-	impl_fuse_context(const struct fuse_operations *ops, void *user_data, 
-		bool debug, unsigned int filemask, unsigned int dirmask,
+	impl_fuse_context(std::shared_ptr<fuse_chan> ch, const struct fuse_operations *ops,
+		void *user_data, bool debug, unsigned int filemask, unsigned int dirmask,
 		const char *fsname, const char *volname);
 
 	bool debug() const {return debug_;}
 
 	////////////////////////////////////Methods///////////////////////////////
+
+	void convert_window_create_kernel_flag(ULONG FileAttributes, ULONG CreateOptions, ULONG CreateDisposition,
+		DWORD *outFileAttributesAndFlags, DWORD *outCreationDisposition);
+
 	static int cast_from_longlong(LONGLONG src, FUSE_OFF_T *res);
 
 	int do_open_dir(LPCWSTR FileName, PDOKAN_FILE_INFO DokanFileInfo);

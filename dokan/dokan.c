@@ -155,7 +155,7 @@ BOOL CheckDriveLetterAvailability(WCHAR DriveLetter) {
   return TRUE;
 }
 
-void CheckAllocationUnitSectorSize(PDOKAN_OPTIONS DokanOptions) {
+VOID CheckAllocationUnitSectorSize(PDOKAN_OPTIONS DokanOptions) {
   ULONG allocationUnitSize = DokanOptions->AllocationUnitSize;
   ULONG sectorSize = DokanOptions->SectorSize;
 
@@ -833,7 +833,7 @@ BOOL WINAPI DllMain(HINSTANCE Instance, DWORD Reason, LPVOID Reserved) {
   return TRUE;
 }
 
-void DOKANAPI DokanMapKernelToUserCreateFileFlags(
+VOID DOKANAPI DokanMapKernelToUserCreateFileFlags(
     ULONG FileAttributes, ULONG CreateOptions, ULONG CreateDisposition,
     DWORD *outFileAttributesAndFlags, DWORD *outCreationDisposition) {
   if (outFileAttributesAndFlags) {

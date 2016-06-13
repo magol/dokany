@@ -25,7 +25,7 @@ struct fuse_session
 
 struct fuse_chan
 {
-	fuse_chan():ResolvedDokanMain(NULL), ResolvedDokanUnmount(NULL), ResolvedDokanRemoveMountPoint(NULL), dokanDll(NULL) {}
+	fuse_chan():ResolvedDokanMain(NULL), ResolvedDokanUnmount(NULL), ResolvedDokanRemoveMountPoint(NULL), ResolvedDokanMapKernelToUserCreateFileFlags(NULL), dokanDll(NULL) {}
 	~fuse_chan();
 
 	//This method dynamically loads DOKAN functions
@@ -34,9 +34,13 @@ struct fuse_chan
 	typedef int (__stdcall *DokanMainType)(PDOKAN_OPTIONS,PDOKAN_OPERATIONS);
 	typedef BOOL (__stdcall *DokanUnmountType)(WCHAR DriveLetter);
 	typedef BOOL (__stdcall *DokanRemoveMountPointType)(LPCWSTR MountPoint);
+	typedef VOID (__stdcall *DokanMapKernelToUserCreateFileFlagsType)(ULONG FileAttributes,
+		ULONG CreateOptions, ULONG CreateDisposition,
+		DWORD *outFileAttributesAndFlags, DWORD *outCreationDisposition);
 	DokanMainType ResolvedDokanMain;
 	DokanUnmountType ResolvedDokanUnmount;
 	DokanRemoveMountPointType ResolvedDokanRemoveMountPoint;
+	DokanMapKernelToUserCreateFileFlagsType ResolvedDokanMapKernelToUserCreateFileFlags;
 
 	std::string mountpoint;
 private:
@@ -46,7 +50,7 @@ private:
 struct fuse
 {
 	bool within_loop;
-	std::unique_ptr<fuse_chan> ch;
+	std::shared_ptr<fuse_chan> ch;
 	fuse_session sess;
 	fuse_config conf;
 
